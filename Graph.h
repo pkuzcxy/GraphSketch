@@ -22,6 +22,8 @@ class graph
 	public:
 		vector<string> node;
 		map<string, int> index;
+		map<string, int> degree;
+		map<string, int> weight;
 		vector<edge*> g;
 		graph();
 		~graph(){
@@ -74,6 +76,19 @@ int graph::get_max_d()
 			e->label = 0;
 			g.push_back(e); 
 		}
+
+		it = degree.find(s1);
+		if (it != degree.end())
+			++it->second;
+		else
+			degree[s1] = 1;
+
+		it = weight.find(s1);
+		if (it != weight.end())
+			it->second += w;
+		else
+			weight[s1] = w;
+
 		it = index.find(s2);
 		if(it!=index.end())
 			n2 = it->second;

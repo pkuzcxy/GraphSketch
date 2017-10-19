@@ -12,17 +12,6 @@
 using namespace std;
 int main()
 {
-//	ifstream f("data.txt");
-	//string s1,s2;
-	//int v,l;
-/*	graph* gr=new graph();
-	while(f>>s1)
-	{
-		f>>s2>>l>>v;
-		gr->insert(s1,s2,l,v);
-	}*/ 
-//	int w=40;
-	//int w=1000;
 	ofstream fout1("edge-ARE.txt");
 	ofstream fout2("node-ARE.txt");
 	ofstream fout3("trans_accuracy-s.txt");
@@ -32,30 +21,22 @@ int main()
 		ifstream fsrc("source-count.txt");
 		ifstream fdest("destination-count.txt");
 		ifstream fcheck("stdans.txt");
-		//ifstream fnode("nodequery.txt");
 		ifstream ftrans("transquery-e.txt");
-	//	MSG *msg = new MSG(0.74*w,4,4);
-		TCM *tcm = new TCM(6*w,6*w,7);
-		//RCM* rcm =new RCM(2*w,1,4);
-	//	GBF *gbf = new GBF(w,4,4);
+		TCM *tcm = new TCM(6 * w, 6 * w, 7);
 		UNS *uns = new UNS(2*w,16,8,1,4,12);
 		string s1, s2;
 		int v;
-	//	int l, v;
 		int n=0;
 		string so1, si2;
 		while(fin>>s1)
 		{
 			fin>>s2;
-		//	fin>>v;
+			int weight;
+			fin >> weight;
 			so1 = s1+'o';
 			si2 = s2+'i';
-			tcm->insert(((const unsigned char*)s1.c_str()), ((const unsigned char*)s2.c_str()),1,s1.length());
-		//	tcm->insert(((const unsigned char*)s2.c_str()), ((const unsigned char*)s1.c_str()),1,s1.length());
-		//	msg->insert((const unsigned char*)(s1.c_str()), (const unsigned char*)(s2.c_str()),1,s1.length());
-		//	rcm->insert(so1,si2,1,so1.length());
-			//gbf->insert(s1,s2);
-			uns->insert(s1,s2);
+			tcm->insert(((const unsigned char*)s1.c_str()), ((const unsigned char*)s2.c_str()),weight,s1.length());
+			uns->insert(s1,s2,weight)
 		//	rcm->insert(s2,s1,v,s1.length());
 		//	n++;
 		}

@@ -17,6 +17,7 @@ struct basket
 	short dest;
 	short shift1;
 	short shift2;
+	short v;
 };
 struct mapnode
 {
@@ -26,7 +27,13 @@ struct mapnode
 struct linknode
 {
 	unsigned int key;
+	short v;
 	linknode* next;
+};
+struct NodeQueryResult
+{
+	int weight;
+	int degree;
 };
 class UNS
 {
@@ -57,8 +64,11 @@ class UNS
 			}
 			delete []value;
 		 }
-		 void insert(string s1, string s2);
-		 bool query(string s1, string s2); 		
+		 void insert(string s1, string s2,int v);
+		 bool query(string s1, string s2); 	
+		 int edgequery(string s1,string s2);	
+		 int nodedegreequery(string s1);
+		 int nodevaluequery(string s1);
 };
 
 UNS::UNS(int width, int range, int p_num, int k_num, int size,int f_num)
@@ -85,6 +95,7 @@ UNS::UNS(int width, int range, int p_num, int k_num, int size,int f_num)
 		value[i]->dest = 0;
 		value[i]->shift1 = 0;
 		value[i]->shift2 = 0;
+		value[i]->v=0;
 		/*for(int j=0;j<s;j++)
 		{
 			value[i]->source[j]=0;
@@ -93,7 +104,7 @@ UNS::UNS(int width, int range, int p_num, int k_num, int size,int f_num)
 		 } */ 
 	}
 }
-void UNS::insert(string s1, string s2)
+void UNS::insert(string s1, string s2,int v)
 {		
 		unsigned int hash1 = (*hfunc[hashindex])((unsigned char*)(s1.c_str()), s1.length());
 		unsigned int hash2 = (*hfunc[hashindex])((unsigned char*)(s2.c_str()), s2.length());
@@ -154,6 +165,7 @@ void UNS::insert(string s1, string s2)
 				pos = (pos+j)%(w*w);
 				if((value[pos]->source==g1)&&(value[pos]->dest==g2)&&(value[pos]->shift2==index2)&&(value[pos]->shift1==index1))
 				{
+					value[pos]->v+=v;
 					return;
 				}
 				if(value[pos]->source==0&&value[pos]->dest==0)
@@ -162,6 +174,7 @@ void UNS::insert(string s1, string s2)
 					value[pos]->dest=g2;
 					value[pos]->shift2=index2;
 					value[pos]->shift1=index1;
+					value[pos]->v=v;
 					inserted = true;
 					break;
 				}
@@ -193,13 +206,17 @@ void UNS::insert(string s1, string s2)
 				while(true)
 				{
 					if(node->key==k2)
+					{
+						node->v+=v;
 						break;
+					}
 					if(node->next==NULL)
 					{
 						linknode* ins = new linknode;
 						ins->key = k2;
 						ins->next = NULL;
 						node->next = ins;
+						ins->v=v;
 						break;
 					}
 					node = node->next;
@@ -213,7 +230,9 @@ void UNS::insert(string s1, string s2)
 				node->key = k1;
 				linknode* ins = new linknode;
 				ins->key = k2;
+				ins->v=0;
 				ins->next = NULL;
+				ins->v=v;
 				node->next = ins;
 				buffer.push_back(node); 
 			}	
@@ -361,4 +380,158 @@ bool UNS::query(string s1, string s2)
 			q.pop();
 		}
 		return false;
- } 
+ }
+ int UNS::edgequery(string s1, string s2)
+ {
+ 		unsigned int hash1 = (*hfunc[hashindex])((unsigned char*)(s1.c_str()), s1.length());
+		unsigned int hash2 = (*hfunc[hashindex])((unsigned char*)(s2.c_str()), s2.length());
+		int tmp = pow(2,f)-1;
+		int g1 = hash1 & tmp;
+		if(g1==0) g1+=1;
+		int h1 = (hash1>>f)%w;
+		int g2 = hash2 & tmp;
+		if(g2==0) g2+=1;
+		int h2 = (hash2>>f)%w;
+		int pos;
+		int* tmp1 = new int[r];
+		int* tmp2 = new int[r];
+		tmp1[0] = g1;
+		tmp2[0] = g2;
+		for(int i=1;i<r;i++)
+		{
+			tmp1[i]=(tmp1[i-1]*timer+prime)%bigger_p;
+			tmp2[i]=(tmp2[i-1]*timer+prime)%bigger_p;
+		}
+		int key = (g1<<f)+g2; 
+		for(int i=0;i<p;i++)
+		{
+			key = (key*3+prime)%bigger_p;
+			int index = key%(r*r);
+			int index1 =index/r;
+			int index2 = index%r; 
+			int p1 = (h1+tmp1[index1])%w;
+			int p2 = (h2+tmp2[index2])%w;
+			int pos = p1*w+p2;
+			for(int j=0;j<s;j++)
+			{
+				pos = (pos+j)%(w*w);
+				if((value[pos]->source==g1)&&(value[pos]->dest==g2)&&(value[pos]->shift2==index2)&&(value[pos]->shift1==index1))
+				{
+					return value[pos]->v;
+				}
+			}
+		}
+			unsigned int k1 = (h1<<f)+g1;
+			unsigned int k2 = (h2<<f)+g2;
+			/*char c1[4];
+			for(int j=0;j<4;j++)
+			{
+				c1[j]=char(((k1>>(8*j))%256));
+			}
+			for(int j=0;j<4;j++)
+			{
+				unsigned int hash = ((*hfunc[j])((const unsigned char*)c1, 4))%(M*16);
+				int v1 = hash/16;
+				int v2 = hash%16;
+				BF2[v1] = BF2[v1]|(1<<(15-v2));
+			}*/
+			map<int, short>::iterator it = index.find(k1);
+			if(it!=index.end())
+			{
+				int tag = it->second;
+				linknode* node = buffer[tag];
+				while(true)
+				{
+					if(node->key==k2)
+						return node->v;
+					node=node->next;
+				}
+			}
+	return 0;
+  } 
+
+int  UNS::nodedegreequery(string s1)
+ {
+	 unsigned int hash1 = (*hfunc[hashindex])((unsigned char*)(s1.c_str()), s1.length());
+	 int tmp = pow(2, f) - 1;
+
+	 int g1 = hash1 & tmp;
+	 if (g1 == 0) g1 += 1;
+	 int h1 = (hash1 >> f) % w;
+
+	 int pos;
+	 int* tmp1 = new int[r];
+	 tmp1[0] = g1;
+	 for (int i = 1; i < r; i++)
+	 {
+		 tmp1[i] = (tmp1[i - 1] * timer + prime) % bigger_p;
+	 }
+	 int d = 0;
+	 for (int i = 0; i < r; ++i)
+	 {
+		 int p1 = (h1 + tmp1[i]) % w;
+		 for (int j = 0; j < w; ++j)
+		 {
+			 int pos = p1*w + j;
+			 if ((value[pos]->source == g1) && (value[pos]->shift1 == i)) ++d;
+		 }
+	 }
+
+	 unsigned int k1 = (h1 << f) + g1;
+	 map<int, short>::iterator it = index.find(k1);
+	 if (it != index.end())
+	 {
+		 int tag = it->second;
+		 linknode* node = buffer[tag];
+		 while (node->next != NULL)
+		 {
+			 node = node->next;
+			 ++d;
+		 }
+		 ++d;
+	 }
+	 return d;
+}
+
+int  UNS::nodevaluequery(string s1)
+{
+	unsigned int hash1 = (*hfunc[hashindex])((unsigned char*)(s1.c_str()), s1.length());
+	int tmp = pow(2, f) - 1;
+
+	int g1 = hash1 & tmp;
+	if (g1 == 0) g1 += 1;
+	int h1 = (hash1 >> f) % w;
+
+	int pos;
+	int* tmp1 = new int[r];
+	tmp1[0] = g1;
+	for (int i = 1; i < r; i++)
+	{
+		tmp1[i] = (tmp1[i - 1] * timer + prime) % bigger_p;
+	}
+	int d = 0;
+	for (int i = 0; i < r; ++i)
+	{
+		int p1 = (h1 + tmp1[i]) % w;
+		for (int j = 0; j < w; ++j)
+		{
+			int pos = p1*w + j;
+			if ((value[pos]->source == g1) && (value[pos]->shift1 == i)) 
+				d += value[pos]->v;
+		}
+	}
+	unsigned int k1 = (h1 << f) + g1;
+	map<int, short>::iterator it = index.find(k1);
+	if (it != index.end())
+	{
+		int tag = it->second;
+		linknode* node = buffer[tag];
+		while (node->next != NULL)
+		{
+			d += node->v;
+			node = node->next;
+		}
+		d += node->v;
+	}
+	return d;
+}
