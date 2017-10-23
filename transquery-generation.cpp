@@ -5,38 +5,25 @@
 using namespace std;
 int main()
 {
-	ifstream fin("Amazon.txt");
-	ofstream fout("transquery-a.txt"); 
-	//ifstream ("transquery.txt");
-	ifstream fcheck("data.txt"); 
+	ifstream fin("C:/Users/dkzcx/Desktop/EE2.txt");
+	ofstream fout("C:/Users/dkzcx/Desktop/transEE2.txt"); 
 	string s1,s2;
 	int n;
 	bool ans1,ans2;
 	graph* g=new graph();
 	int sum=0;
-//	bool in[4000];
-//	bool out[4000];
-	/*for(int i=0;i<4000;i++)
-	{
-		in[i]=false;
-		out[i]=false;
-	}*/
 	while(fin>>s1)
 	{
-//		sum++;
 		fin>>s2;
-		g->insert(s1,s2,0,1);
-		int n1=(g->index.find(s1))->second;
-		int n2=(g->index.find(s2))->second;
-//		out[n1]=true;
-//		in[n2]=true;
-	//	g->insert(s2,s1,0,n);
+		int weight;
+		fin >> weight;
+		g->insert(s1,s2,0,weight);
 	}
 	cout<<g->get_edgenum()<<' '<<g->get_nodenum()<<endl;
 	sum=0;
-//	int s=0;
 	int num=g->node.size();
 	cout<<num<<endl;
+	cout << g->chong << endl;
 	int i=0;
 	while(i<10000000)
 	{
@@ -55,10 +42,10 @@ int main()
 	//	if(!out[n1]||!in[n2])
 	//		continue; 
 	//	s++;
-		s1=g->node[n1];
-		s2=g->node[n2];
+		s1 = g->node[n1];
+		s2 = g->node[n2];
 	//	cout<<s1<<' '<<s2<<endl;
-		ans1=g->transquery(s1,s2,0);
+		ans1 = g->transquery(s1,s2,0);
 	//	cout<<"over"<<endl;
 	//	ans2=g->transquery(s2,s1,0);
 		if(!ans1)
