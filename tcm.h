@@ -28,7 +28,7 @@ private:
     int width;
     int depth;
     int hashnum;
-    short **value;
+    int **value;
 public:
     TCM(int w,int d,int h);
     ~TCM()
@@ -40,13 +40,14 @@ public:
         delete [] value;
     }
     void saveOperation(int target_d,int target_w,int hashnum, int weight);
-    void insert(const unsigned char* v1,const unsigned char* v2,int weight,int len);
-    int query(const unsigned char* v1,const unsigned char* v2,int len);
+    void insert(const unsigned char* v1,const unsigned char* v2,int weight,int len1,int len2);
+    int query(const unsigned char* v1,const unsigned char* v2,int len1,int len2);
     int nodequery(const unsigned char*v1, int len, int type);
-    bool transquery(const unsigned char*v1,const unsigned char*v2, int len);
+	int nodedegreequery(const unsigned char*v1, int len, int type);
+    bool transquery(const unsigned char*v1,const unsigned char*v2, int len1,int len2);
 };
 
-bool TCM::transquery(const unsigned char*v1, const unsigned char*v2, int len)
+bool TCM::transquery(const unsigned char*v1, const unsigned char*v2, int len1,int  len2)
 {
 	for(int i=0;i<hashnum;i++)
 	{
@@ -54,13 +55,13 @@ bool TCM::transquery(const unsigned char*v1, const unsigned char*v2, int len)
 		bool* checked = new bool[width];
 		for(int j=0;j<width;j++)
 			checked[j] = false;
-		unsigned int src=((*hfunc[2*i])(v1,len))%depth;
-		unsigned int dest=((*hfunc[2*i])(v2,len))%width;
+		unsigned int src=((*hfunc[2*i])(v1,len1))%depth;
+		unsigned int dest=((*hfunc[2*i])(v2,len2))%width;
 		queue<int> q;
 		int v1 = src;
 		int v2 = dest;
 		int hash = v1*width+v2;
-		if(value[i][hash]>0)
+		if(value[i][hash]>0)//直接可达
 			continue;
 		else
 		{
@@ -98,36 +99,36 @@ TCM::TCM(int w,int d,int h)
     width = w;
     depth = d;
     hashnum = h;
-    value = new short*[hashnum];
+    value = new int*[hashnum];
     for (int i=0; i<hashnum; ++i)
     {
-        value[i] = new short[width*depth];
-        memset(value[i],0,sizeof(short)*width*depth);
+        value[i] = new int[width*depth];
+        memset(value[i],0,sizeof(int)*width*depth);
     }      
 }
 
 void TCM::saveOperation(int target_d,int target_w,int hashnum,int weight)
 {
-    value[hashnum][target_d*width+target_w] += weight;
+    if(value[hashnum][target_d*width + target_w] + weight > 0) value[hashnum][target_d*width+target_w] += weight;
 }
 
-void TCM::insert(const unsigned char* v1,const unsigned char* v2,int weight,int len)
+void TCM::insert(const unsigned char* v1,const unsigned char* v2,int weight,int len1,int len2)
 {
 	for(int i=0;i<hashnum;i++)
 {
-    unsigned int hash1 = ((*hfunc[2*i])(v1,len))%depth;
-    unsigned int hash2 = ((*hfunc[2*i])(v2,len))%width;
+    unsigned int hash1 = ((*hfunc[2*i])(v1,len1))%depth;
+    unsigned int hash2 = ((*hfunc[2*i])(v2,len2))%width;
     saveOperation(hash1,hash2,i,weight);
 }
 }
 
-int TCM::query(const unsigned char* v1,const unsigned char* v2,int len)
+int TCM::query(const unsigned char* v1,const unsigned char* v2,int len1,int len2)
 {
     int min=65536;
     for(int i=0;i<hashnum;i++)
     {
-    	unsigned int hash1 = ((*hfunc[2*i])(v1,len))%depth;
-    	unsigned int hash2 = ((*hfunc[2*i])(v2,len))%width;
+    	unsigned int hash1 = ((*hfunc[2*i])(v1,len1))%depth;
+    	unsigned int hash2 = ((*hfunc[2*i])(v2,len2))%width;
     	int v = value[i][hash1*width+hash2];
     	if(v<min)
     	min = v;
@@ -248,3 +249,43 @@ int TCM::nodequery(const unsigned char* v1, int len, int type )
 		return min;	
 	}
  } 
+
+
+int TCM::nodedegreequery(const unsigned char* v1, int len, int type)
+{
+	if (type == 0)
+	{
+		int min = 65523 * 1024;
+		for (int i = 0; i<hashnum; i++)
+		{
+			unsigned int hash1 = ((*hfunc[2 * i])(v1, len)) % depth;
+			hash1 = hash1*width;
+			int sum = 0;
+			for (int j = 0; j<width; j++)
+			{
+				if (value[i][hash1 + j] > 0)sum++;
+			}
+			if (sum<min)
+				min = sum;
+			if (min == 0)
+				break;
+		}
+		return min;
+	}
+	else
+	{
+		int min = 65536 * 1024;
+		for (int i = 0; i<hashnum; i++)
+		{
+			unsigned int hash1 = ((*hfunc[2 * i])(v1, len)) % width;
+			int sum = 0;
+			for (int j = 0; j < depth; j++)
+				if (value[i][j*width + hash1] > 0) sum++;
+			if (sum<min)
+				min = sum;
+			if (min == 0)
+				break;
+		}
+		return min;
+	}
+}
