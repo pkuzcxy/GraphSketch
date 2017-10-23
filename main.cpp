@@ -8,56 +8,34 @@
 //#include"GBF.h"
 #include"UNS.h"
 #include<time.h>
-//#include"Graph.h" 
+#include"Graph.h" 
 using namespace std;
 int main()
 {
-//	ifstream f("data.txt");
-	//string s1,s2;
-	//int v,l;
-/*	graph* gr=new graph();
-	while(f>>s1)
-	{
-		f>>s2>>l>>v;
-		gr->insert(s1,s2,l,v);
-	}*/ 
-//	int w=40;
-	//int w=1000;
-	ofstream fout1("edge-ARE.txt");
-	ofstream fout2("node-ARE.txt");
-	ofstream fout3("trans_accuracy-s.txt");
+	ofstream fout1("ws_edge-res.txt",ios::app);
+	ofstream fout2("ws_node-res.txt",ios::app);
+	ofstream fout3("ws_trans_accuracy-res.txt",ios::app);
 	for(int w=800;w<1000;w+=100)
 	{ 
-		ifstream fin("Email-EuAll.txt");
-		ifstream fsrc("source-count.txt");
-		ifstream fdest("destination-count.txt");
-		ifstream fcheck("stdans.txt");
-		//ifstream fnode("nodequery.txt");
-		ifstream ftrans("transquery-e.txt");
-	//	MSG *msg = new MSG(0.74*w,4,4);
-		TCM *tcm = new TCM(6*w,6*w,7);
-		//RCM* rcm =new RCM(2*w,1,4);
-	//	GBF *gbf = new GBF(w,4,4);
-		UNS *uns = new UNS(2*w,16,8,1,4,12);
+		ifstream fin("ws2.txt");
+		ifstream fcheck("ws2check.txt");
+		ifstream fsrc("ws2srcnode.txt");
+		ifstream ftrans("transquery-ws.txt");
+		int uns_w = w;
+		TCM *tcm = new TCM(0.9  * uns_w, 0.9 * uns_w, 4);
+		UNS *uns = new UNS(uns_w,16,8,1,4,12);
+		graph *g = new graph();
 		string s1, s2;
 		int v;
-	//	int l, v;
 		int n=0;
-		string so1, si2;
 		while(fin>>s1)
 		{
 			fin>>s2;
-		//	fin>>v;
-			so1 = s1+'o';
-			si2 = s2+'i';
-			tcm->insert(((const unsigned char*)s1.c_str()), ((const unsigned char*)s2.c_str()),1,s1.length());
-		//	tcm->insert(((const unsigned char*)s2.c_str()), ((const unsigned char*)s1.c_str()),1,s1.length());
-		//	msg->insert((const unsigned char*)(s1.c_str()), (const unsigned char*)(s2.c_str()),1,s1.length());
-		//	rcm->insert(so1,si2,1,so1.length());
-			//gbf->insert(s1,s2);
-			uns->insert(s1,s2);
-		//	rcm->insert(s2,s1,v,s1.length());
-		//	n++;
+			int weight;
+			fin >> weight;
+			tcm->insert(((const unsigned char*)s1.c_str()), ((const unsigned char*)s2.c_str()),weight,s1.length(),s2.length());
+			uns->insert(s1, s2, weight);
+			g->insert(s1, s2, 0, weight);
 		}
 		cout<<" Insertion done"<<endl;
 		cout<<uns->n<<endl;
@@ -72,11 +50,18 @@ int main()
 			}
 		 }
 		 cout<<sum<<endl;  
-	//	int n1=0;
-	//	int n2=0;
-		float n1 = 0;
-		float n2 = 0;
-		float n3 = 0;
+
+		 
+		double n1 = 0;
+		double n2 = 0;
+		double n3 = 0;
+		double n4 = 0;
+
+		double d3 = 0;//测时间
+		double d4 = 0;
+		int g_res = 0;
+		int tcm_res = 0;
+		int uns_res = 0;
 		n=0;
 		//int s =gr->node.size();
 		//for(int i=0;i<200000;i++)
@@ -155,48 +140,153 @@ int main()
 		fout2<<w<<' '<<float(n1)/n<<' '<<float(n2)/n<<endl;*/
 	//	ftrans>>v;
 	//	ftrans>>v;
-		n=0;
-		n1=0;
-		n2=0;
 		clock_t start, finish;
-		string str1[1500];
-		string str2[1500];
-		while(ftrans>>str1[n])
+		string str1[10000];
+		string str2[10000];
+
+		//edge_querry
+		while(fcheck>>str1[n])
 		{
-			ftrans>>str2[n];
+			fcheck>>str2[n];
+			int weight;
+			fcheck >> weight;
 			n++;
-			if(n>100)
+			if(n==5000)
 				break;
-		}	
-			//so1=s1+'o';
-			//si2=s2+'i';
-			bool v1,v2,v3;
-			//v1 = tcm->transquery((const unsigned char*)(s1.c_str()), (const unsigned char*)(s2.c_str()),s1.length());
-			//v2 = msg->transquery((const unsigned char*)(s1.c_str()), (const unsigned char*)(s2.c_str()),s1.length(),10000000);
-		//	v3 = rcm->transquery(so1, si2, so1.length());
+		}
 		start=clock();
 		for(int i=0;i<n;i++)
 		{
-			v1 = tcm->transquery((const unsigned char*)(str1[i].c_str()), (const unsigned char*)(str2[i].c_str()),s1.length());
-			v3 = uns->query(str1[i],str2[i]);
-			   if(!v1)
-				n1++;
-		/*	if(!v2)
-				n2++;*/
-			if(!v3)
-				n3++;
+			g_res = g->query(str1[i], str2[i], 0);
+			uns_res = uns->edgequery(str1[i], str2[i]);
+			n1 += double(uns_res) / g_res - 1;
+			n2 += uns_res - g_res;
 		}
 		finish = clock();
-		double d3= double(finish-start)/CLOCKS_PER_SEC;
-		cout<<2*w<<' '<<float(n1)/n<<' '<<float(n2)/n<<' '<<n3/n<<' '<<d3<<endl;
-		//fout<<float(n1)/n<<endl;
+		d3= double(finish-start)/CLOCKS_PER_SEC;
+
+		start = clock();
+		for (int i = 0; i<n; i++)
+		{
+			g_res = g->query(str1[i], str2[i], 0);
+			tcm_res = tcm->query((const unsigned char*)(str1[i].c_str()), (const unsigned char*)(str2[i].c_str()), str1[i].length(),str2[i].length());
+			n3 += double(tcm_res) / g_res - 1;
+			n4 += tcm_res - g_res;
+		}
+		finish = clock();
+		d4 = double(finish - start) / CLOCKS_PER_SEC;
+
+		fout1<<uns_w<<" "<<n1/n<<' '<<n3/n<<"  "<<n2/n<<' '<<n4/n<<"  "<<d3<<" "<<d4<<endl;
+
+		n = 0;
+		while (fsrc >> str1[n])
+		{
+			n++;
+			if (n == 5000)
+				break;
+		}
+
+		//nodevalue_query
+
+		n1 = n2 = n3 = n4 = 0;
+		g_res = tcm_res = uns_res = 0;
+
+		start = clock();
+		for (int i = 0; i<n; i++)
+		{
+			g_res = g->nodequery(str1[i],0);
+			uns_res = uns->nodevaluequery(str1[i],0);
+			n1 += double(uns_res) / g_res - 1;
+			n2 += uns_res - g_res;
+		}
+		finish = clock();
+		d3 = double(finish - start) / CLOCKS_PER_SEC;
+
+		start = clock();
+		for (int i = 0; i<n; i++)
+		{
+			g_res = g->nodequery(str1[i],0);
+			tcm_res = tcm->nodequery((const unsigned char*)(str1[i].c_str()),str1[i].length(),0);
+			n3 += double(tcm_res) / g_res - 1;
+			n4 += tcm_res - g_res;
+		}
+		finish = clock();
+		d4 = double(finish - start) / CLOCKS_PER_SEC;
+		fout2 << uns_w << " " << n1 / n << ' ' << n3 / n << "  " << n2 / n << ' ' << n4 / n << "  " << d3 << " " << d4 << endl;
+		
+
+		//nodedegree_query
+		fout2 << "degree_query" << endl;
+		n1 = n2 = n3 = n4 = 0;
+		g_res = tcm_res = uns_res = 0;
+		start = clock();
+		for (int i = 0; i<n; i++)
+		{
+			g_res = g->degree[str1[i]];
+			uns_res = uns->nodedegreequery(str1[i]);
+			if (g_res != 0)
+			{
+				n1 += double(uns_res) / g_res - 1;
+				n2 += uns_res - g_res;
+			}
+		}
+		finish = clock();
+		d3 = double(finish - start) / CLOCKS_PER_SEC;
+
+		start = clock();
+		for (int i = 0; i<n; i++)
+		{
+			g_res = g->degree[str1[i]];
+			tcm_res = tcm->nodedegreequery((const unsigned char*)(str1[i].c_str()), str1[i].length(), 0);
+			if (g_res != 0)
+			{
+				n3 += double(tcm_res) / g_res - 1;
+				n4 += tcm_res - g_res;
+			}
+		}
+		finish = clock();
+
+		d4 = double(finish - start) / CLOCKS_PER_SEC;
+		fout2 << uns_w << " " << n1 / n << ' ' << n3 / n << "  " << n2 / n << ' ' << n4 / n << "  " << d3 << " " << d4 << endl;
+
+		//trans_querry
+
+		n1 = n2 = n3 = n4 = 0;
+		g_res = tcm_res = uns_res = 0;
+
+		n = 0;
+		while (ftrans >> str1[n])
+		{   
+			ftrans >> str2[n];
+			n++;
+			if (n == 1000)
+				break;
+		}
+
+
+		start = clock();
+		for (int i = 0; i<n; i++)
+		{
+			uns_res = uns->query(str1[i], str2[i]);
+			if (uns_res) n1++;//代表误报
+		}
+		finish = clock();
+		d3 = double(finish - start) / CLOCKS_PER_SEC;
+
+		start = clock();
+		for (int i = 0; i<n; i++)
+		{
+			tcm_res = tcm->transquery((const unsigned char*)(str1[i].c_str()), (const unsigned char*)(str2[i].c_str()), str1[i].length(), str2[i].length());
+			if (tcm_res)n3++;//代表误报
+		}
+		finish = clock();
+
+		d4 = double(finish - start) / CLOCKS_PER_SEC;
+		fout3 << uns_w << " " << n1<< ' ' << n3<<"  " << d3 <<' '<< d4 << endl;
 		fin.close();
-		ftrans.close();
 		fsrc.close();
-		fdest.close();
 		fcheck.close();
-	//	delete uns;
-		delete tcm;
+		ftrans.close();
 	} 
 	return 0;
 }

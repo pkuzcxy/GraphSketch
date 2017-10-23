@@ -20,8 +20,12 @@ class graph
 		int N;
 		
 	public:
+		int chong;
 		vector<string> node;
 		map<string, int> index;
+		map<string, int> degree;
+		map<string, int> weight;
+
 		vector<edge*> g;
 		graph();
 		~graph(){
@@ -35,6 +39,7 @@ class graph
 		int get_edgenum();
 		int get_max_d();
 		bool transquery(string s1, string s2, int label);
+		int nodequery(string s1,int label);
  }; 
  graph::graph()
  {
@@ -74,10 +79,23 @@ int graph::get_max_d()
 			e->label = 0;
 			g.push_back(e); 
 		}
+
+		//it = degree.find(s1);
+		//if (it != degree.end())
+		//	++it->second;
+		//else
+		//	degree[s1] = 1;
+
+		it = weight.find(s1);
+		if (it != weight.end())
+			it->second += w;
+		else
+			weight[s1] = w;
+
 		it = index.find(s2);
 		if(it!=index.end())
 			n2 = it->second;
-			else
+		else
 		{
 			node.push_back(s2); 
 			index[s2]=n;
@@ -90,6 +108,7 @@ int graph::get_max_d()
 			e->label = 0;
 			g.push_back(e);
 		}
+
 		edge* e=g[n1];
 		int length=0;
 		bool find = false;
@@ -108,6 +127,12 @@ int graph::get_max_d()
 		}
 		if(!find)
 		{
+			//自环的时候不会加1
+			it = degree.find(s1);
+			if (it != degree.end())
+				++it->second;
+			else
+				degree[s1] = 1;
 			N++;
 			edge* f=new edge;
 			f->label=l;
@@ -146,9 +171,11 @@ bool graph::transquery(string s1, string s2, int label)
 {
 	int n1 = index[s1];
 	int n2 = index[s2];
+
 //	cout<<n1<<' '<<n2<<endl;
+	
 	edge* e;
-	queue<int> q;
+    queue<int> q;
 	q.push(n1);
 	int s = n;
 	bool* checked=new bool[s];
@@ -176,4 +203,22 @@ bool graph::transquery(string s1, string s2, int label)
 		//	cout<<"found!"<<endl
 	}
 	return false;
+}
+int graph::nodequery(string s1,int label)
+{
+	map<string, int>::iterator it;
+	int n1;
+	it = index.find(s1);
+	if (it != index.end())
+		n1 = it->second;
+	else return 0;
+	edge* e = g[n1];
+	int weight = 0;
+	while (e != NULL)
+	{
+		if (e->label == label)
+			weight += e->weight;
+		e = e->next;
+	}
+	return weight;
 }
